@@ -1,0 +1,17 @@
+[package]
+name = "disacomp-cli"
+description = "Herramienta de línea de comandos para probar el transporte."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+disacomp-protocol.workspace = true
+disacomp-transport.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true

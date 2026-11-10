@@ -1,0 +1,21 @@
+[package]
+name = "disacomp-transport"
+description = "Transporte QUIC cifrado entre dos equipos."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+disacomp-protocol.workspace = true
+quinn.workspace = true
+rcgen.workspace = true
+rustls.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["time"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+
+[lints]
+workspace = true
