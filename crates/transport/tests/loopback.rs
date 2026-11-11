@@ -175,3 +175,50 @@ async fn client_reconnects_after_host_restart() {
     server_tx.send(&text("de vuelta")).await.unwrap();
     assert_eq!(client_rx.recv().await.unwrap(), text("de vuelta"));
 }
+
+#[tokio::test]
+async fn video_packets_arrive_complete_and_in_order() {
+    let identity = Identity::generate().unwrap();
+    let (_listener, server, client) = connected_pair(&identity).await;
+
+    // Un fotograma completo grande (1 MB) seguido de varios pequeños.
+    let sizes = [1024 * 1024, 10, 3000, 0, 70_000];
+    let payload = |index: usize, len: usize| vec![index as u8 + 1; len];
+
+    let send = async {
+        let mut video = server.media().open().await.unwrap();
+        for (index, len) in sizes.into_iter().enumerate() {
+            video
+                .send(index == 0, index as u64, &payload(index, len))
+                .await
+                .unwrap();
+        }
+        video
+    };
+    let receive = async {
+        let mut video = client.media().accept().await.unwrap();
+        for (index, len) in sizes.into_iter().enumerate() {
+            let packet = video.recv().await.unwrap();
+            assert_eq!(packet.keyframe, index == 0);
+            assert_eq!(packet.capture_time_micros, index as u64);
+            assert_eq!(packet.data, payload(index, len));
+        }
+        video
+    };
+    let (sender, mut receiver) = timeout(TEST_TIMEOUT, async { tokio::join!(send, receive) })
+        .await
+        .expect("el vídeo no llegó a tiempo");
+
+    // Los mensajes siguen funcionando con el stream de vídeo abierto.
+    let (mut server_tx, _server_rx) = server.split();
+    let (_client_tx, mut client_rx) = client.split();
+    server_tx.send(&text("sigo aquí")).await.unwrap();
+    assert_eq!(client_rx.recv().await.unwrap(), text("sigo aquí"));
+
+    // Al soltar el emisor, el receptor ve el final del stream.
+    drop(sender);
+    assert!(matches!(
+        timeout(TEST_TIMEOUT, receiver.recv()).await.unwrap(),
+        Err(TransportError::Closed)
+    ));
+}

@@ -18,9 +18,14 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod media;
+
 /// Versión del protocolo. Se intercambia en [`Message::Hello`] y debe coincidir
 /// en ambos extremos. Hay que incrementarla con cada cambio incompatible.
-pub const PROTOCOL_VERSION: u16 = 1;
+///
+/// - 1: mensajes de texto.
+/// - 2: se añade el stream de vídeo (ver [`media`]).
+pub const PROTOCOL_VERSION: u16 = 2;
 
 /// Tamaño máximo del mensaje serializado dentro de una trama.
 ///

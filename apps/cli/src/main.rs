@@ -14,9 +14,18 @@
 //! disacomp-cli capture --list
 //! disacomp-cli capture --fps 15 --seconds 5
 //! ```
+//!
+//! Etapa 3: pantalla compartida (ver los módulos `share` y `receive`).
+//!
+//! ```text
+//! equipo A>  disacomp-cli share
+//! equipo B>  disacomp-cli receive <ip-de-A>:7000 --fingerprint <huella que muestra A>
+//! ```
 
 mod bmp;
 mod capture;
+mod receive;
+mod share;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
@@ -32,7 +41,7 @@ use tracing_subscriber::filter::LevelFilter;
 #[derive(Parser)]
 #[command(
     version,
-    about = "Herramienta de pruebas: comunicación cifrada y captura de pantalla"
+    about = "Herramienta de pruebas: comunicación cifrada, captura y pantalla compartida"
 )]
 struct Cli {
     /// Muestra el registro detallado del transporte QUIC.
@@ -63,6 +72,10 @@ enum Command {
     },
     /// Captura la pantalla de este equipo y muestra qué cambia.
     Capture(capture::CaptureArgs),
+    /// Comparte la pantalla de este equipo, previo permiso en la terminal.
+    Share(share::ShareArgs),
+    /// Recibe una pantalla compartida sin mostrarla y guarda imágenes de prueba.
+    Receive(receive::ReceiveArgs),
 }
 
 /// Por qué terminó una sesión.
@@ -99,6 +112,11 @@ async fn main() -> Result<()> {
         // La captura es bloqueante: se ejecuta en un hilo aparte para no
         // detener el runtime asíncrono.
         Command::Capture(args) => tokio::task::spawn_blocking(move || capture::run(args)).await?,
+        Command::Share(args) => {
+            let mut input = spawn_stdin_reader();
+            share::run(args, &mut input).await
+        }
+        Command::Receive(args) => receive::run(args).await,
     }
 }
 

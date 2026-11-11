@@ -1,0 +1,18 @@
+[package]
+name = "disacomp-viewer"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+disacomp-protocol.workspace = true
+disacomp-session.workspace = true
+disacomp-transport.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+softbuffer.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync"] }
+winit.workspace = true
+
+[lints]
+workspace = true

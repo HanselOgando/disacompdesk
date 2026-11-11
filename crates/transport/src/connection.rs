@@ -1,6 +1,7 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
+use disacomp_protocol::media::{self, VideoPacket};
 use disacomp_protocol::{Message, decode, encode};
 use tokio::time::timeout;
 
@@ -98,10 +99,91 @@ impl Connection {
         self.sender.quic.remote_address()
     }
 
+    /// Acceso al stream de vídeo de esta conexión. Se puede pedir antes de
+    /// [`Connection::split`] y usar después.
+    pub fn media(&self) -> MediaStreams {
+        MediaStreams {
+            quic: self.sender.quic.clone(),
+        }
+    }
+
     /// Separa la conexión en sus dos mitades para poder enviar y recibir a la
     /// vez desde tareas distintas.
     pub fn split(self) -> (MessageSender, MessageReceiver) {
         (self.sender, self.receiver)
+    }
+}
+
+/// Permite abrir o aceptar el stream de vídeo de una conexión.
+pub struct MediaStreams {
+    quic: quinn::Connection,
+}
+
+impl MediaStreams {
+    /// Abre el stream de vídeo hacia el otro equipo. Lo llama quien comparte.
+    ///
+    /// El otro extremo no lo ve hasta que se envía el primer paquete.
+    pub async fn open(&self) -> Result<MediaSender, TransportError> {
+        let stream = self.quic.open_uni().await?;
+        Ok(MediaSender { stream })
+    }
+
+    /// Espera a que el otro equipo abra el stream de vídeo. Lo llama quien
+    /// mira. Es seguro cancelarla.
+    pub async fn accept(&self) -> Result<MediaReceiver, TransportError> {
+        let stream = self.quic.accept_uni().await?;
+        Ok(MediaReceiver {
+            stream,
+            buffer: Vec::new(),
+        })
+    }
+}
+
+/// Extremo de envío del stream de vídeo.
+pub struct MediaSender {
+    stream: quinn::SendStream,
+}
+
+impl MediaSender {
+    /// Envía un fotograma comprimido.
+    ///
+    /// Espera si el otro extremo o la red no dan abasto: esa espera es la
+    /// señal para que quien comparte capture menos (contrapresión). Igual que
+    /// [`MessageSender::send`], no debe cancelarse a medias.
+    pub async fn send(
+        &mut self,
+        keyframe: bool,
+        capture_time_micros: u64,
+        data: &[u8],
+    ) -> Result<(), TransportError> {
+        let header = media::encode_header(keyframe, capture_time_micros, data.len())?;
+        self.stream.write_all(&header).await?;
+        self.stream.write_all(data).await?;
+        Ok(())
+    }
+}
+
+/// Extremo de recepción del stream de vídeo.
+pub struct MediaReceiver {
+    stream: quinn::RecvStream,
+    /// Bytes recibidos que todavía no forman un paquete completo.
+    buffer: Vec<u8>,
+}
+
+impl MediaReceiver {
+    /// Espera el siguiente fotograma comprimido. Es seguro cancelarla, igual
+    /// que [`MessageReceiver::recv`].
+    pub async fn recv(&mut self) -> Result<VideoPacket, TransportError> {
+        loop {
+            if let Some((packet, consumed)) = media::decode(&self.buffer)? {
+                self.buffer.drain(..consumed);
+                return Ok(packet);
+            }
+            match self.stream.read_chunk(usize::MAX, true).await? {
+                Some(chunk) => self.buffer.extend_from_slice(&chunk.bytes),
+                None => return Err(TransportError::Closed),
+            }
+        }
     }
 }
 

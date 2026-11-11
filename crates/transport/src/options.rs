@@ -38,10 +38,11 @@ impl TransportOptions {
         config
             .keep_alive_interval(Some(self.keep_alive_interval))
             .max_idle_timeout(Some(idle_timeout))
-            // Por ahora el protocolo usa un único stream bidireccional; no se
-            // le permite al otro extremo abrir nada más.
+            // El protocolo usa un stream bidireccional (mensajes) y uno
+            // unidireccional (vídeo); no se le permite al otro extremo abrir
+            // nada más.
             .max_concurrent_bidi_streams(1u8.into())
-            .max_concurrent_uni_streams(0u8.into());
+            .max_concurrent_uni_streams(1u8.into());
         Ok(Arc::new(config))
     }
 }

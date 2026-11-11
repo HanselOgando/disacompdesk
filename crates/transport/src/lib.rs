@@ -18,7 +18,9 @@ mod options;
 mod tls;
 
 pub use backoff::Backoff;
-pub use connection::{Connection, MessageReceiver, MessageSender};
+pub use connection::{
+    Connection, MediaReceiver, MediaSender, MediaStreams, MessageReceiver, MessageSender,
+};
 pub use endpoint::{Listener, connect};
 pub use error::TransportError;
 pub use options::TransportOptions;

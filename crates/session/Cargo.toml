@@ -1,0 +1,19 @@
+[package]
+name = "disacomp-session"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+disacomp-capture.workspace = true
+disacomp-codec.workspace = true
+disacomp-protocol.workspace = true
+disacomp-transport.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["rt", "sync"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+
+[lints]
+workspace = true
