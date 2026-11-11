@@ -6,6 +6,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+disacomp-capture.workspace = true
 disacomp-protocol.workspace = true
 disacomp-transport.workspace = true
 anyhow.workspace = true

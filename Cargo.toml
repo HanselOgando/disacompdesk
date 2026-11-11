@@ -10,6 +10,7 @@ publish = false
 # Versiones únicas para todo el workspace: cada crate las hereda con
 # `nombre = { workspace = true }`.
 [workspace.dependencies]
+disacomp-capture = { path = "crates/capture" }
 disacomp-protocol = { path = "crates/protocol" }
 disacomp-transport = { path = "crates/transport" }
 
@@ -25,6 +26,16 @@ serde = { version = "1.0.229", features = ["derive"] }
 sha2 = "0.11.1"
 thiserror = "2.0.21"
 tokio = "1.54.1"
+# Enlaces oficiales de Microsoft a la API de Windows. Cada `feature` activa un
+# grupo de funciones; solo se piden las de Direct3D 11 y DXGI.
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+] }
 tracing-subscriber = "0.3.23"
 
 [workspace.lints.rust]

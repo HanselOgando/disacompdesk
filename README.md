@@ -1,5 +1,22 @@
 # Proyecto: Desarrollo de una alternativa a AnyDesk utilizando Rust
 
+## Resumen de las etapas
+
+1. **Comunicación** (hecha y verificada entre el PC y el teléfono): dos computadoras se conectan y se envían mensajes de forma cifrada. Si la conexión se cae, se recupera sola.
+2. **Captura de pantalla**: el programa toma imágenes de la pantalla de Windows varias veces por segundo y detecta qué partes cambiaron.
+3. **Transmisión de pantalla**: esas imágenes se comprimen como vídeo y se envían a la otra computadora, que las muestra casi en tiempo real. Aquí aparece la primera ventana de la aplicación.
+4. **Control remoto**: desde la otra computadora se puede mover el ratón y escribir. Antes, la persona del equipo controlado tiene que aceptar la conexión, y puede cortarla en cualquier momento.
+5. **Servidor de conexiones**: cada equipo recibe un número de identificación, como en AnyDesk, y se conecta escribiendo ese número en lugar de una dirección IP.
+6. **Conexiones por Internet**: dos equipos en redes distintas (casa y oficina, por ejemplo) se conectan directamente cuando es posible; si no, pasan por un servidor intermedio.
+7. **Seguridad reforzada**: límite de intentos fallidos, posibilidad de revocar accesos y un registro de quién se conectó y cuándo.
+8. **Interfaz completa**: la aplicación con todas sus pantallas: tu identificador, el campo para conectarte, solicitudes entrantes, controles de sesión y configuración.
+9. **Transferencia de archivos**: enviar y recibir archivos entre los dos equipos, con barra de progreso, cancelación y permiso de quien recibe.
+10. **Optimización y otras plataformas**: más fluidez y menos consumo, soporte para varios monitores, y versiones para Linux y macOS.
+
+Cada etapa se cierra con una revisión antes de empezar la siguiente.
+
+---
+
 ## 1. Objetivo del proyecto
 
 Quiero desarrollar una aplicación de escritorio similar a AnyDesk o TeamViewer, utilizando principalmente **Rust**.

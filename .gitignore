@@ -1,4 +1,5 @@
 /target
+/capturas
 node_modules/
 dist/
 .env

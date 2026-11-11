@@ -1,10 +1,22 @@
-//! Herramienta de prueba de la Etapa 1: dos equipos intercambian líneas de
-//! texto por una conexión QUIC cifrada.
+//! Herramienta de pruebas del proyecto.
+//!
+//! Etapa 1: dos equipos intercambian líneas de texto por una conexión QUIC
+//! cifrada.
 //!
 //! ```text
 //! equipo A>  disacomp-cli listen
 //! equipo B>  disacomp-cli connect <ip-de-A>:7000 --fingerprint <huella que muestra A>
 //! ```
+//!
+//! Etapa 2: captura de la pantalla local (ver el módulo `capture`).
+//!
+//! ```text
+//! disacomp-cli capture --list
+//! disacomp-cli capture --fps 15 --seconds 5
+//! ```
+
+mod bmp;
+mod capture;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
@@ -18,7 +30,10 @@ use tokio::sync::mpsc;
 use tracing_subscriber::filter::LevelFilter;
 
 #[derive(Parser)]
-#[command(version, about = "Prueba de comunicación cifrada entre dos equipos")]
+#[command(
+    version,
+    about = "Herramienta de pruebas: comunicación cifrada y captura de pantalla"
+)]
 struct Cli {
     /// Muestra el registro detallado del transporte QUIC.
     #[arg(short, long, global = true)]
@@ -46,6 +61,8 @@ enum Command {
         #[arg(short, long)]
         fingerprint: Fingerprint,
     },
+    /// Captura la pantalla de este equipo y muestra qué cambia.
+    Capture(capture::CaptureArgs),
 }
 
 /// Por qué terminó una sesión.
@@ -70,12 +87,18 @@ async fn main() -> Result<()> {
         })
         .init();
 
-    let mut input = spawn_stdin_reader();
     match cli.command {
-        Command::Listen { port, bind } => listen(SocketAddr::new(bind, port), &mut input).await,
+        Command::Listen { port, bind } => {
+            let mut input = spawn_stdin_reader();
+            listen(SocketAddr::new(bind, port), &mut input).await
+        }
         Command::Connect { addr, fingerprint } => {
+            let mut input = spawn_stdin_reader();
             connect_and_retry(addr, fingerprint, &mut input).await
         }
+        // La captura es bloqueante: se ejecuta en un hilo aparte para no
+        // detener el runtime asíncrono.
+        Command::Capture(args) => tokio::task::spawn_blocking(move || capture::run(args)).await?,
     }
 }
 
